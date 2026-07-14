@@ -1,0 +1,9 @@
+-keep class com.sun.jna.** { *; }
+-keepclassmembers class * { native <methods>; }
+-keep class com.kassiber.app.crypto.CryptoBridge { *; }
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keep class androidx.compose.** { *; }
+-keep class android.bluetooth.** { *; }
+-keep class com.kassiber.app.service.KassiberAccessibilityService { *; }
+-keep class com.kassiber.app.overlay.** { *; }

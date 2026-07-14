@@ -1,0 +1,2 @@
+#!/bin/sh
+exec echo "Please run with official Gradle wrapper or Android Studio"
