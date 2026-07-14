@@ -1,0 +1,22 @@
+# Rust
+rust_core/target/
+**/*.rs.bk
+Cargo.lock
+
+# Android
+android/.gradle/
+android/app/build/
+android/*/build/
+android/local.properties
+android/*.iml
+.idea/
+*.iml
+
+# NDK
+*.o
+*.so
+*.a
+
+# Misc
+.DS_Store
+artifacts/
