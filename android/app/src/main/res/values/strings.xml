@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KASSIBER</string>
+    <string name="accessibility_service_label">KASSIBER In-Place Decryption</string>
+    <string name="accessibility_service_description">Ermöglicht KASSIBER das Erkennen und Entschlüsseln von verschlüsselten Nachrichten direkt in WhatsApp, Signal und anderen Messenger-Apps. Klartext wird niemals in Carrier-Logs gespeichert.</string>
+</resources>
