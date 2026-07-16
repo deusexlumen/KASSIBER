@@ -1,9 +1,11 @@
 <pre align="center">
-
-█▄▀ ▄▀█ █▀ █▀ █ █▄▄ █▀▀ █▀█
-█ █ █▀█ ▄█ ▄█ █ █▄█ ██▄ █▀▄
-
+██   ██  █████  ███████  ███████ ██ ██████  ███████ ██████  
+██  ██  ██   ██ ██      ██       ██ ██   ██ ██      ██   ██ 
+█████   ███████ ███████ ███████  ██ ██████  █████   ██████  
+██  ██  ██   ██      ██      ██  ██ ██   ██ ██      ██   ██ 
+██   ██ ██   ██ ███████ ███████  ██ ██████  ███████ ██   ██ 
 </pre>
+
 <p align="center" dir="auto">
   <strong><em>There is no server. There is no cloud. There is only the key you hold.</em></strong><br>
   <code>Post-Quantum · Messenger-Agnostic · Serverless · High-Assurance</code>
@@ -16,13 +18,16 @@
   <a href="#-post-quantum-cryptography"><img src="https://img.shields.io/badge/Crypto-PQC_(ML--KEM--768|ML--DSA--65)-ff6b6b?style=flat-square" alt="PQC"></a>
 </p>
 
+> ⚠️ **Disclaimer: Early Work in Progress (WIP)**  
+> KASSIBER is currently in an early **experimental / pre-alpha stage**. It is a working proof-of-concept but has **not** been fully tested in production or audited. Expect bugs and incomplete features. Active development, optimizations, and hardening are ongoing. Contributions and feedback are highly welcome!
+
 ---
 
 ## What is KASSIBER?
 
 **KASSIBER** is not a messenger. It is a cryptographic invisibility layer that sits *between* you and any messenger you already use.
 
-Historically, a **Kassiber** is a secret message smuggled past guards and censorship — never going through central channels, never logged, never intercepted. This app resurrects that philosophy for the digital age to fight modern mass surveillance.
+Historically, a **Kassiber** is a secret message smuggled past guards and censorship — never going through official channels, never logged, never intercepted. This app resurrects that philosophy for the digital age to fight modern mass surveillance (such as Client-Side Scanning).
 
 * No servers. No backend. No metadata honeypot.
 * No new messenger to adopt. Works over WhatsApp, Signal, Telegram, SMS, email, or even carrier pigeons.
