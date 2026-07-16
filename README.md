@@ -1,3 +1,4 @@
+```markdown
 <pre align="center">
 █▄▀ ▄▀█ █▀ █▀ █ █▄▄ █▀▀ █▀█
 █ █ █▀█ ▄█ ▄█ █ █▄█ ██▄ █▀▄
@@ -61,3 +62,128 @@ Historically, a **Kassiber** is a secret message smuggled past guards and censor
 │ ├─ Keystore Actor       → StrongBox / Titan M2               │
 │ └─ Dictionary Codec     → Transport-agnostic encoding        │
 └──────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+**Messenger-Agnostic via AccessibilityService**  
+KASSIBER does not replace your messenger. It observes the screen, intercepts ciphertext in the clipboard or input field, decrypts it via a floating overlay, and encrypts outgoing messages before they reach the messenger's input field. The messenger sees only noise. The recipient sees only noise — unless they also hold the key.
+
+**BLE Onboarding (QR → GATT)**  
+No phone number verification. No email. No cloud identity. Two devices exchange ephemeral keys via Bluetooth Low Energy after a visual QR handshake. The QR contains a public key fragment; the GATT channel completes the exchange. The phone never speaks to the internet for key setup.
+
+**Hybrid Ratchet (SPQR + libsignal)**  
+Post-quantum cryptography alone is not enough. We chain ML-KEM-768's quantum resilience with libsignal's battle-tested double ratchet. Even if one layer breaks, the other holds. Forward secrecy is not optional; it is default.
+
+---
+
+## Post-Quantum Cryptography
+
+KASSIBER implements the **NIST FIPS 203 / 204** standards:
+
+* **ML-KEM-768** (Kyber) — Key Encapsulation Mechanism  
+  Security level: ~192-bit classical / ~128-bit quantum  
+  Ciphertext overhead: 1,088 bytes  
+  Perfect for hybrid ratcheting where bandwidth matters.
+
+* **ML-DSA-65** (Dilithium) — Digital Signature Standard  
+  Security level: ~192-bit classical / ~128-bit quantum  
+  Signature size: 3,293 bytes  
+  Used for long-term identity signatures and build attestation.
+
+Both primitives are implemented in **Rust** via the **pqclean** and **sphincsplus** ecosystems, compiled to Android via UniFFI with zero JNI overhead.
+
+---
+
+## Build
+
+```shell
+# Clone with submodules (Rust core is vendored for reproducibility)
+git clone --recursive https://github.com/deusexlumen/KASSIBER.git
+cd KASSIBER
+
+# Build the Rust core (Android targets: arm64-v8a, armeabi-v7a, x86_64)
+cd rust_core
+./build-android.sh # Requires Android NDK 25+, Rust 1.78+
+
+# Build the Android app
+cd ../android
+./gradlew assembleRelease
+
+# Or install directly to a connected device
+./gradlew installDebug
+```
+
+### Requirements
+* **Android Studio** Ladybug or newer
+* **Android NDK** r25c or newer
+* **Rust** 1.78+ with `cargo-ndk`
+* **F-Droid build tools** (for reproducible builds)
+
+---
+
+## Distribution
+
+<p align="center" dir="auto">
+  <a target="_blank" rel="noopener noreferrer nofollow" href="https://f-droid.org/packages/com.deusexlumen.kassiber/">
+    <img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="80" style="max-width: 100%; height: auto; max-height: 80px;">
+  </a>
+</p>
+
+**KASSIBER is exclusively distributed via F-Droid.** No Google Play. No sideloading APKs from random mirrors. No proprietary app stores.
+
+This is not elitism. It is a security guarantee:
+* **Reproducible builds** — anyone can verify the binary matches the source.
+* **No proprietary tracking libraries** — no Firebase, no Crashlytics, no Play Services.
+* **Update transparency** — every update is signed by F-Droid's deterministic pipeline.
+
+---
+
+## License
+
+```text
+KASSIBER — Post-Quantum Privacy Layer
+Copyright (C) 2026 Deus Ex Lumen
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+```
+
+**AGPL-3.0** ensures that any service built on KASSIBER — even if deployed in the cloud — must share its source. This is not just a privacy app; it is a **commons**.
+
+---
+
+## Why AGPL? Why F-Droid? Why no Play Store?
+
+Because privacy is not a feature you ship. It is a **stance you take**.
+
+* **AGPL-3.0** closes the "SaaS loophole." If someone forks KASSIBER and runs it as a backend service, they must publish their changes. The code stays free forever.
+* **F-Droid** guarantees that the app you install is the app we wrote. No injected analytics, no remote configuration, no silent updates.
+* **No Play Store** because Google's ecosystem requires compromising on device integrity, attestation, and user autonomy. We refuse.
+
+> *"In a world of surveillance capitalism, writing AGPL code is an act of civil disobedience."*
+
+---
+
+## Contributing
+
+KASSIBER is young and cryptographic. We welcome:
+* **Security audits** — formal or informal. Threat model reviews are gold.
+* **Rust contributions** — performance, constant-time hardening, new PQC primitives.
+* **Android UX** — accessibility service reliability, overlay edge cases, battery optimization.
+* **Documentation** — translations, tutorials, threat model explanations.
+* **F-Droid packaging** — reproducible build expertise.
+
+**Please read our security policy before submitting vulnerability reports.** Responsible disclosure is appreciated; public shaming is not.
+
+---
+
+## Etymology
+
+> **Kassiber** (German Rotwelsch / Prison slang):  
+> A secret message smuggled past guards or censorship.  
+> Originates from the Hebrew root *k-t-b* (to write) / *kesive* (document), which entered the German language via the historical secret language of vagabonds (Rotwelsch). It represents communication that evades systemic surveillance. 
+
+That is what this app does. It makes every message a Kassiber.
