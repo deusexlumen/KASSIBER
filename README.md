@@ -1,9 +1,11 @@
-```markdown
 <pre align="center">
+```markdown
+
 █▄▀ ▄▀█ █▀ █▀ █ █▄▄ █▀▀ █▀█
 █ █ █▀█ ▄█ ▄█ █ █▄█ ██▄ █▀▄
-</pre>
+
 ```
+</pre>
 <p align="center" dir="auto">
   <strong><em>There is no server. There is no cloud. There is only the key you hold.</em></strong><br>
   <code>Post-Quantum · Messenger-Agnostic · Serverless · High-Assurance</code>
