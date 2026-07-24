@@ -1,0 +1,20 @@
+[package]
+name = "kassiber-uniffi-bindgen"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Pinned uniffi-bindgen CLI for reproducible KASSIBER bindings generation"
+publish = false
+
+# Invoke as:
+#   cargo run -p kassiber-uniffi-bindgen -- generate --library <cdylib> \
+#       --language kotlin --out-dir <dir> --config kassiber-ffi/uniffi.toml
+[[bin]]
+name = "uniffi-bindgen"
+path = "main.rs"
+
+[dependencies]
+uniffi = { workspace = true, features = ["cli"] }

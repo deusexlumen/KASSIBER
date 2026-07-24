@@ -26,6 +26,8 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private lateinit var bleManager: BleOnboardingManager
+    // Single activity-scoped bridge; creating one per click leaks a native handle each time.
+    private var cryptoBridge: CryptoBridge? = null
 
     private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         permissions.entries.forEach { }
@@ -41,6 +43,7 @@ class MainActivity : ComponentActivity() {
                     KassiberMainScreen(
                         onEnableAccessibility = { openAccessibilitySettings() },
                         onStartOnboarding = { },
+                        cryptoBridgeProvider = { cryptoBridge ?: CryptoBridge().also { cryptoBridge = it } },
                         bleStatus = bleManager.status.collectAsState().value
                     )
                 }
@@ -67,12 +70,17 @@ class MainActivity : ComponentActivity() {
 
     private fun openAccessibilitySettings() { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
 
-    override fun onDestroy() { super.onDestroy(); bleManager.stop() }
+    override fun onDestroy() {
+        super.onDestroy()
+        bleManager.stop()
+        cryptoBridge?.close()
+        cryptoBridge = null
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun KassiberMainScreen(onEnableAccessibility: () -> Unit, onStartOnboarding: () -> Unit, bleStatus: BleOnboardingManager.BleStatus) {
+fun KassiberMainScreen(onEnableAccessibility: () -> Unit, onStartOnboarding: () -> Unit, cryptoBridgeProvider: () -> CryptoBridge, bleStatus: BleOnboardingManager.BleStatus) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var cryptoStatus by remember { mutableStateOf("Uninitialized") }
@@ -103,7 +111,7 @@ fun KassiberMainScreen(onEnableAccessibility: () -> Unit, onStartOnboarding: () 
         Button(onClick = onStartOnboarding, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) {
             Text("\uD83D\uDCF8 Scan QR for Pairing")
         }
-        OutlinedButton(onClick = { scope.launch { try { cryptoStatus = CryptoBridge().status() } catch (e: Exception) { cryptoStatus = "Error: ${e.message}" } } }, modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = { scope.launch { try { cryptoStatus = cryptoBridgeProvider().status() } catch (e: Exception) { cryptoStatus = "Error: ${e.message}" } } }, modifier = Modifier.fillMaxWidth()) {
             Text("\uD83D\uDD04 Test Crypto Core")
         }
         Text(text = "AGPL-3.0 | F-Droid Exclusive | No Servers", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 16.dp))

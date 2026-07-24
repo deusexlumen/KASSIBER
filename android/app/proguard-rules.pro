@@ -1,4 +1,3 @@
--keep class com.sun.jna.** { *; }
 -keepclassmembers class * { native <methods>; }
 -keep class com.kassiber.app.crypto.CryptoBridge { *; }
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}

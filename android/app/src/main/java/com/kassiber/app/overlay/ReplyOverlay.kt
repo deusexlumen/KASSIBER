@@ -5,6 +5,7 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -20,18 +21,20 @@ class ReplyOverlay(private val context: Context, private val windowManager: Wind
     private var replyButtonView: View? = null
     private var composeView: View? = null
 
+    private fun dp(value: Int): Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(), context.resources.displayMetrics).toInt()
+
     fun showReplyButton(bounds: Rect, onClick: () -> Unit) {
         hideReplyButton()
         mainHandler.post {
             try {
                 val button = Button(context).apply {
-                    text = "\uD83D\uDD11 Antworten"
+                    text = "🔑 Antworten"
                     setBackgroundColor(context.getColor(R.color.kassiber_accent))
                     setTextColor(context.getColor(android.R.color.white))
                     setOnClickListener { hideReplyButton(); onClick() }
                 }
                 replyButtonView = button
-                windowManager.addView(button, WindowManager.LayoutParams(bounds.width(), 120, bounds.left, bounds.top,
+                windowManager.addView(button, WindowManager.LayoutParams(bounds.width(), dp(48), bounds.left, bounds.top,
                     WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START })
             } catch (e: Exception) { Timber.e(e, "Failed to show reply button") }
         }
@@ -42,19 +45,25 @@ class ReplyOverlay(private val context: Context, private val windowManager: Wind
         mainHandler.post {
             try {
                 val editText = EditText(context).apply { hint = "KASSIBER-Antwort..."; setTextColor(context.getColor(R.color.kassiber_text_primary)); minLines = 3; maxLines = 6 }
+                val padding = dp(24)
                 val layout = LinearLayout(context).apply {
-                    orientation = LinearLayout.VERTICAL; setPadding(24, 24, 24, 24)
+                    orientation = LinearLayout.VERTICAL; setPadding(padding, padding, padding, padding)
                     setBackgroundColor(context.getColor(R.color.kassiber_surface))
                     addView(editText)
                     addView(Button(context).apply {
-                        text = "\uD83D\uDD10 Verschlüsseln & Senden"
+                        text = "🔐 Verschlüsseln & Senden"
                         setBackgroundColor(context.getColor(R.color.kassiber_accent))
                         setOnClickListener { val text = editText.text.toString(); if (text.isNotBlank()) { hideComposeDialog(); onSend(text) } }
                     })
                 }
                 composeView = layout
-                windowManager.addView(layout, WindowManager.LayoutParams(nearBounds.width() + 100, WindowManager.LayoutParams.WRAP_CONTENT, nearBounds.left - 50, nearBounds.top - 200,
-                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START })
+                windowManager.addView(layout, WindowManager.LayoutParams(nearBounds.width() + dp(32), WindowManager.LayoutParams.WRAP_CONTENT, nearBounds.left - dp(16), nearBounds.top - dp(56),
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT).apply {
+                    gravity = Gravity.TOP or Gravity.START
+                    // Accessibility overlay windows get limited IME adjustment; ADJUST_PAN
+                    // keeps the dialog above the keyboard where the framework allows it.
+                    softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
+                })
                 editText.requestFocus()
             } catch (e: Exception) { Timber.e(e, "Failed to show compose dialog") }
         }

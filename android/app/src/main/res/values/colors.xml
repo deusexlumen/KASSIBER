@@ -9,4 +9,5 @@
     <color name="kassiber_overlay_bg">#E6000000</color>
     <color name="kassiber_text_primary">#FFFFFF</color>
     <color name="kassiber_text_secondary">#B0B0B0</color>
+    <color name="ic_launcher_background">#003300</color>
 </resources>

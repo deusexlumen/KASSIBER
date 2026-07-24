@@ -9,19 +9,15 @@ rust-version.workspace = true
 description = "KASSIBER Dictionary Transport Codec"
 
 [dependencies]
-kassiber-crypto = { workspace = true }
+kassiber-crypto.workspace = true
 base64 = { version = "0.22", default-features = false, features = ["alloc"] }
 flate2 = { version = "1.0", default-features = false, features = ["rust_backend"] }
-serde = { workspace = true }
-postcard = { workspace = true }
-thiserror = { workspace = true }
-log = { workspace = true }
-rand = { workspace = true }
+serde.workspace = true
+postcard.workspace = true
+thiserror.workspace = true
+log.workspace = true
+rand.workspace = true
 
 [dev-dependencies]
 quickcheck = "1.0"
 quickcheck_macros = "1.0"
-
-[[bin]]
-name = "fuzz_dict"
-path = "src/fuzz_main.rs"

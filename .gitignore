@@ -1,7 +1,6 @@
 # Rust
 rust_core/target/
 **/*.rs.bk
-Cargo.lock
 
 # Android
 android/.gradle/

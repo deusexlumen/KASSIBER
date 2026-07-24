@@ -12,12 +12,17 @@ description = "KASSIBER UniFFI Android Bindings"
 crate-type = ["cdylib", "staticlib"]
 name = "kassiber_ffi"
 
-[dependencies]
-kassiber-crypto = { workspace = true }
-kassiber-transport = { workspace = true }
-uniffi = { workspace = true }
-tokio = { workspace = true }
-log = { workspace = true }
+# NOTE: bindings are defined with proc macros (`uniffi::setup_scaffolding!()`
+# in src/lib.rs). There is intentionally no build.rs / UDL file; the Kotlin
+# bindings are generated from the built cdylib with uniffi-bindgen
+# (see ../build-android.sh).
 
-[build-dependencies]
-uniffi = { workspace = true, features = ["build"] }
+[dependencies]
+kassiber-crypto.workspace = true
+kassiber-transport.workspace = true
+uniffi.workspace = true
+tokio.workspace = true
+log.workspace = true
+rand.workspace = true
+postcard.workspace = true
+thiserror.workspace = true

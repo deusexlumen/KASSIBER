@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple padlock glyph: shackle + body, centered in the safe zone -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M44,54 v-8 a10,10 0 0 1 20,0 v8" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,54 h32 a4,4 0 0 1 4,4 v24 a4,4 0 0 1 -4,4 h-32 a4,4 0 0 1 -4,-4 v-24 a4,4 0 0 1 4,-4 z" />
+    <path
+        android:fillColor="#003300"
+        android:pathData="M54,64 a4,4 0 0 1 2,7.46 v4.54 a2,2 0 0 1 -4,0 v-4.54 a4,4 0 0 1 2,-7.46 z" />
+</vector>

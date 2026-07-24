@@ -75,9 +75,55 @@ impl Chunker {
         }).collect()
     }
 
+    /// Reassemble frames into the original payload, with full validation:
+    /// consistent `total_chunks`, exactly one chunk per sequence number
+    /// (no duplicates, no gaps) and the expected frame-type sequence
+    /// (Single, or First → Continuation* → Last).
     pub fn reassemble(frames: &mut [Frame]) -> Result<Vec<u8>> {
-        if frames.is_empty() { return Err(TransportError::InvalidFrame("No frames".into())); }
+        if frames.is_empty() {
+            return Err(TransportError::InvalidFrame("No frames".into()));
+        }
         frames.sort_by_key(|f| f.sequence);
+
+        let total = frames[0].total_chunks;
+        if total == 0 {
+            return Err(TransportError::InvalidFrame("total_chunks is zero".into()));
+        }
+        if frames.len() != total as usize {
+            return Err(TransportError::InvalidFrame(format!(
+                "Expected {} chunks, got {}",
+                total,
+                frames.len()
+            )));
+        }
+        for (i, f) in frames.iter().enumerate() {
+            if f.total_chunks != total {
+                return Err(TransportError::InvalidFrame(
+                    "Inconsistent total_chunks across frames".into(),
+                ));
+            }
+            if f.sequence != i as u16 {
+                return Err(TransportError::InvalidFrame(format!(
+                    "Duplicate or missing chunk at sequence {}",
+                    i
+                )));
+            }
+            let expected = if total == 1 {
+                FrameType::Single
+            } else if i == 0 {
+                FrameType::First
+            } else if i == total as usize - 1 {
+                FrameType::Last
+            } else {
+                FrameType::Continuation
+            };
+            if f.frame_type != expected {
+                return Err(TransportError::InvalidFrame(format!(
+                    "Unexpected frame type {:?} at sequence {} (expected {:?})",
+                    f.frame_type, i, expected
+                )));
+            }
+        }
         Ok(frames.iter().flat_map(|f| f.payload.clone()).collect())
     }
 }
@@ -120,5 +166,40 @@ mod tests {
         let data: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
         let mut frames = Chunker::new(20).chunk(&data);
         assert_eq!(Chunker::reassemble(&mut frames).unwrap(), data);
+    }
+
+    #[test]
+    fn test_reassemble_out_of_order_ok() {
+        let data: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
+        let mut frames = Chunker::new(20).chunk(&data);
+        frames.reverse();
+        assert_eq!(Chunker::reassemble(&mut frames).unwrap(), data);
+    }
+
+    #[test]
+    fn test_reassemble_rejects_missing_chunk() {
+        let data: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
+        let frames = Chunker::new(20).chunk(&data);
+        let mut truncated: Vec<Frame> = frames.into_iter().skip(1).collect();
+        assert!(Chunker::reassemble(&mut truncated).is_err());
+    }
+
+    #[test]
+    fn test_reassemble_rejects_duplicate_chunk() {
+        let data: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
+        let frames = Chunker::new(20).chunk(&data);
+        let mut dup = frames.clone();
+        dup.push(frames[1].clone());
+        assert!(Chunker::reassemble(&mut dup).is_err());
+    }
+
+    #[test]
+    fn test_reassemble_rejects_wrong_frame_type() {
+        let data: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
+        let mut frames = Chunker::new(20).chunk(&data);
+        // Corrupt: middle chunk claims to be the Last chunk.
+        let mid = frames.len() / 2;
+        frames[mid].frame_type = FrameType::Last;
+        assert!(Chunker::reassemble(&mut frames).is_err());
     }
 }

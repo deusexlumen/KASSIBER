@@ -5,6 +5,7 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -18,12 +19,14 @@ class DecryptOverlay(private val context: Context, private val windowManager: Wi
     private var textView: TextView? = null
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    private fun dp(value: Float): Float = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, context.resources.displayMetrics)
+
     fun show(bounds: Rect, initialText: String) {
         hide()
         mainHandler.post {
             try {
                 val card = CardView(context).apply {
-                    radius = 12f; cardElevation = 8f
+                    radius = dp(12f); cardElevation = dp(8f)
                     setCardBackgroundColor(context.getColor(R.color.kassiber_overlay_bg))
                     alpha = 0.95f
                     addView(TextView(context).apply {
@@ -31,7 +34,8 @@ class DecryptOverlay(private val context: Context, private val windowManager: Wi
                         text = initialText
                         setTextColor(context.getColor(R.color.kassiber_text_primary))
                         textSize = 14f
-                        setPadding(16, 12, 16, 12)
+                        val hPad = dp(16f).toInt(); val vPad = dp(12f).toInt()
+                        setPadding(hPad, vPad, hPad, vPad)
                     })
                 }
                 val view = android.widget.FrameLayout(context).apply {
@@ -42,7 +46,8 @@ class DecryptOverlay(private val context: Context, private val windowManager: Wi
                 textView = view.findViewById(R.id.overlay_text)
                 windowManager.addView(view, WindowManager.LayoutParams(bounds.width(), WindowManager.LayoutParams.WRAP_CONTENT, bounds.left, bounds.top,
                     WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                    // Read-only overlay: touches must pass through to the carrier app.
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                     PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START })
             } catch (e: Exception) { Timber.e(e, "Failed to show decrypt overlay") }
         }

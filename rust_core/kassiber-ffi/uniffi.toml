@@ -1,3 +1,6 @@
 [bindings.kotlin]
 package_name = "com.kassiber.ffi"
 cdylib_name = "kassiber_ffi"
+# minSdk is 29, so the JVM Cleaner (API 33+) must not be used for object
+# cleanup; generate the Android-compatible cleaner instead.
+android = true

@@ -6,9 +6,13 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.NotFoundException
+import com.google.zxing.PlanarYUVLuminanceSource
+import com.google.zxing.common.HybridBinarizer
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import timber.log.Timber
@@ -17,9 +21,19 @@ import java.util.concurrent.Executors
 class QrScanner(private val context: Context) {
 
     private val executor = Executors.newSingleThreadExecutor()
-    private val barcodeScanner = BarcodeScanning.getClient()
+    private val reader = MultiFormatReader().apply {
+        setHints(mapOf(DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE)))
+    }
     private val _scanResult = MutableSharedFlow<ScanResult>()
     val scanResult = _scanResult.asSharedFlow()
+
+    companion object {
+        // Bootstrap token wire format: version(1) || x25519 pubkey(32) || BLE MAC(6)
+        const val TOKEN_VERSION: Byte = 0x01
+        const val TOKEN_LENGTH = 39
+        const val PUBKEY_LENGTH = 32
+        const val MAC_LENGTH = 6
+    }
 
     data class ScanResult(val x25519Pubkey: ByteArray, val bleMacAddress: String, val rawData: String) {
         override fun equals(other: Any?): Boolean {
@@ -46,27 +60,54 @@ class QrScanner(private val context: Context) {
     }
 
     private fun processImage(imageProxy: ImageProxy) {
-        val mediaImage = imageProxy.image ?: run { imageProxy.close(); return }
-        val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-        barcodeScanner.process(image)
-            .addOnSuccessListener { barcodes -> barcodes.forEach { processBarcode(it) } }
-            .addOnCompleteListener { imageProxy.close() }
+        try {
+            val text = decodeQr(imageProxy)
+            if (text != null) processCode(text)
+        } finally {
+            imageProxy.close()
+        }
     }
 
-    private fun processBarcode(barcode: Barcode) {
-        val rawValue = barcode.rawValue ?: return
+    private fun decodeQr(imageProxy: ImageProxy): String? {
+        // CameraX delivers YUV_420_888; plane 0 is the luminance (Y) channel ZXing needs.
+        val plane = imageProxy.planes[0]
+        if (plane.pixelStride != 1) return null // unsupported layout, skip frame
+        val buffer = plane.buffer
+        val data = ByteArray(buffer.remaining())
+        buffer.get(data)
+        val source = PlanarYUVLuminanceSource(data, plane.rowStride, imageProxy.height, 0, 0, imageProxy.width, imageProxy.height, false)
+        return try {
+            reader.decodeWithState(BinaryBitmap(HybridBinarizer(source))).text
+        } catch (e: NotFoundException) {
+            null
+        } finally {
+            reader.reset()
+        }
+    }
+
+    private fun processCode(rawValue: String) {
         try {
             val result = parseBootstrapToken(rawValue)
             CoroutineScope(Dispatchers.Main).launch { _scanResult.emit(result) }
             Timber.i("QR-Code erkannt: MAC=${result.bleMacAddress}")
-        } catch (e: Exception) { Timber.d("Invalid QR-Code: ${e.message}") }
+        } catch (e: Exception) {
+            Timber.w("Ignoring invalid bootstrap QR-Code: ${e.message}")
+        }
     }
 
     private fun parseBootstrapToken(rawValue: String): ScanResult {
-        val decoded = android.util.Base64.decode(rawValue, android.util.Base64.URL_SAFE)
-        if (decoded.size < 38) throw IllegalArgumentException("Bootstrap token too short")
-        val x25519Pubkey = decoded.sliceArray(0 until 32)
-        val macBytes = decoded.sliceArray(32 until 38)
+        val decoded = try {
+            android.util.Base64.decode(rawValue, android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Token is not valid base64url")
+        }
+        if (decoded.size != TOKEN_LENGTH) throw IllegalArgumentException("Bootstrap token must be $TOKEN_LENGTH bytes, got ${decoded.size}")
+        if (decoded[0] != TOKEN_VERSION) throw IllegalArgumentException("Unsupported bootstrap token version ${decoded[0]}")
+        val x25519Pubkey = decoded.sliceArray(1 until 1 + PUBKEY_LENGTH)
+        val macBytes = decoded.sliceArray(1 + PUBKEY_LENGTH until TOKEN_LENGTH)
+        if (macBytes.all { it == 0.toByte() } || macBytes.all { it == 0xFF.toByte() }) {
+            throw IllegalArgumentException("Invalid BLE MAC address in token")
+        }
         val macAddress = macBytes.joinToString(":") { "%02X".format(it) }
         return ScanResult(x25519Pubkey, macAddress, rawValue)
     }

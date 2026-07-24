@@ -1,10 +1,14 @@
 //! KASSIBER Cryptographic Core
 //!
 //! Hybrid Post-Quantum + Classical cryptography:
-//! - KEM: ML-KEM-768 + X25519
-//! - Signature: ML-DSA-65 + Ed25519
-//! - AEAD: AES-256-GCM
-//! - Ratchet: SPQR (v1.5.1) + libsignal Triple Ratchet
+//! - KEM: ML-KEM-768 (FIPS 203) + X25519
+//! - Signatures: ML-DSA-65 (FIPS 204) + Ed25519 (dual signatures)
+//! - AEAD: AES-256-GCM (with AAD)
+//! - KDF: HKDF-SHA-256
+//! - Ratchet: symmetric HKDF chain ratchet (role-mirrored chains, skipped-key
+//!   store for out-of-order delivery) with ML-KEM-768 re-key
+//! - Handshake: authenticated hybrid prekey handshake (ML-KEM + X25519,
+//!   dual-signed prekey bundles)
 
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
@@ -21,8 +25,8 @@ pub use primitives::{
     Aes256GcmKey, AesAead, DualKeyPair, HybridCiphertext, HybridKeyPair, HybridPublicKey,
     HybridSecretKey, MlDsa65KeyPair, PostQuantumKeyPair, PostQuantumPublicKey, X25519KeyPair,
 };
-pub use ratchet::{RatchetConfig, SpqrRatchet, TripleRatchetAdapter};
+pub use ratchet::{RatchetConfig, Role, SpqrRatchet, TripleRatchetAdapter};
 pub use session::{
-    DecryptResult, EpochCounter, KassiberSession, PrekeyBundle, SessionConfig, SessionReset,
-    SessionState,
+    DecryptResult, EpochCounter, HandshakeMessage, KassiberSession, PrekeyBundle, SessionConfig,
+    SessionReset, SessionState,
 };
